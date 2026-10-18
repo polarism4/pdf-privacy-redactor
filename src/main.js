@@ -194,9 +194,12 @@ function createMaskElement(box) {
   elem.title=box.accepted?'Approved mask — tap to remove':'Suggestion — tap to approve';
   elem.setAttribute('role','button');elem.setAttribute('tabindex','0');
   elem.setAttribute('aria-label',elem.title);
+  // Safari versions may expose click as MouseEvent after pen PointerEvents.
+  let maskPointerType='';
+  elem.addEventListener('pointerdown',e=>{maskPointerType=e.pointerType;});
   elem.addEventListener('click',e=>{
     e.stopPropagation();if(state.mode==='pan' || state.busy) return;
-    if($('pencil-only').checked && e.detail!==0 && e.pointerType!=='pen') return;
+    if($('pencil-only').checked && e.detail!==0 && (e.pointerType || maskPointerType)!=='pen') return;
     mutate(()=>{const masks=currentMasks();const found=masks.find(m=>m.id===box.id);
       if(!found) return;
       if(!found.accepted) found.accepted=true;

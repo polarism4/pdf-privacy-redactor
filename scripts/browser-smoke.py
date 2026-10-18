@@ -54,6 +54,10 @@ with sync_playwright() as p, tempfile.TemporaryDirectory() as tmp:
     page.mouse.move(x2, y2)
     page.mouse.up()
     assert page.locator('#accepted-count').inner_text() == '1', 'Pencil-only mode accepted mouse input'
+    # Older Safari click events can lack pointerType; retain the pen pointerdown type.
+    page.locator('.mask.approved').evaluate("el => { el.dispatchEvent(new PointerEvent('pointerdown', {pointerType:'pen', bubbles:true})); el.dispatchEvent(new MouseEvent('click', {detail:1, bubbles:true})); }")
+    assert page.locator('#accepted-count').inner_text() == '0'
+    page.locator('#undo').click()
     # Touch cancellation must discard the preview rather than export a partial mask.
     page.locator('#pencil-only').uncheck()
     cdp = context.new_cdp_session(page)
