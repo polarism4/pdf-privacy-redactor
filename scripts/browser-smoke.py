@@ -28,6 +28,11 @@ with sync_playwright() as p, tempfile.TemporaryDirectory() as tmp:
                 uploads.append((request.method, request.url))
     context.on('request', record)
     page.goto(base)
+    if os.environ.get('OFFLINE') == '1':
+        page.evaluate('() => navigator.serviceWorker.ready.then(() => true)')
+        page.reload()
+        context.set_offline(True)
+        page.reload()
     page.locator('#file-input').set_input_files(sample)
     page.wait_for_function("() => document.querySelector('#doc-details').textContent.includes('2 pages') && !document.querySelector('#detect').disabled")
     page.locator('#page-shell').wait_for(state='visible')

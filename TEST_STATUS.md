@@ -9,7 +9,7 @@
 - Touch cancellation, simultaneous contacts retaining the primary gesture, Pencil-only mouse filtering, simulated pen drawing, and mask edit filtering **passed** in Chromium.
 - No document-wide horizontal overflow at 768×1024, 1024×768, and 390×844 viewports.
 - Browser network observation through import/edit/export: **no cross-origin requests or upload requests**. Source review found no document networking or persistent document storage code; CSP restricts connections to the origin. Generated service-worker configuration precaches app assets and has no runtime document caching.
-- Production application shell reloaded offline after service-worker activation during environment validation.
+- Full synthetic import/edit/export workflow passed offline after service-worker activation. Fixed the missing `.mjs` PDF-worker precache entry; offline shell loading alone had not exposed this bug.
 - Registry audit of production dependencies reported **zero known vulnerabilities**. Because the repository has no lockfile, this used a temporary lock outside the checkout; it is not a complete audit of bundled development/build tooling or future dependency resolutions.
 
 ## Reproduce browser regression
@@ -19,6 +19,7 @@ With Python `playwright`, `pymupdf`, and Chromium installed:
 
 ```sh
 python scripts/browser-smoke.py
+OFFLINE=1 python scripts/browser-smoke.py
 # Optional: run the same synthetic test against a deployed build:
 python scripts/browser-smoke.py https://polarism4.github.io/pdf-privacy-redactor/
 ```

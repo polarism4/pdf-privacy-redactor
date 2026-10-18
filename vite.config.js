@@ -21,7 +21,7 @@ export default defineConfig({
       ]
     },
     workbox: {
-      globPatterns: ['**/*.{js,css,html,png,svg,webmanifest,woff2}'],
+      globPatterns: ['**/*.{js,mjs,css,html,png,svg,webmanifest,woff2}'],
       // There is intentionally no runtime caching. User PDFs are never cached.
       runtimeCaching: [],
       cleanupOutdatedCaches: true,
