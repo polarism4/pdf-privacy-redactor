@@ -15,7 +15,7 @@ const state = {
   suggestionNotice:'', verified:null, lastExport:null, reviewedPages:new Set()
 };
 const $ = id => document.getElementById(id);
-let rectCounter = 1, pointerStart = null, resizeTimer = null;
+let rectCounter = 1, pointerStart = null, activePointerId = null, resizeTimer = null;
 
 $('app').innerHTML = `
 <div class="layout">
@@ -41,6 +41,7 @@ $('app').innerHTML = `
         <div class="toolbar"><div class="toolrow">
           <button id="draw-mode" class="modebtn active" aria-pressed="true">▣ Draw mask</button>
           <button id="pan-mode" class="modebtn" aria-pressed="false">✋ Navigate</button>
+          <label class="pencil-option" title="Only pen input changes masks. Use Navigate to scroll with a finger."><input type="checkbox" id="pencil-only"> Pencil only</label>
           <span class="separator"></span>
           <button id="undo" class="iconbtn" title="Undo" disabled>↶</button><button id="redo" class="iconbtn" title="Redo" disabled>↷</button>
           <button id="accept-page" class="quiet">Accept suggestions on page</button>
@@ -110,7 +111,13 @@ function updateControls() {
     b.querySelector('.page-total').textContent=state.reviewedPages.has(Number(b.dataset.page)) ? '✓ reviewed' : (masks.filter(m=>m.accepted).length ? `${masks.filter(m=>m.accepted).length} masks` : '');
   });
 }
+function cancelDrawing() {
+  const pointerId=activePointerId;
+  pointerStart=null;activePointerId=null;$('drawing-preview')?.remove();
+  if(pointerId!==null && $('overlay').hasPointerCapture(pointerId)) $('overlay').releasePointerCapture(pointerId);
+}
 function setMode(mode) {
+  cancelDrawing();
   state.mode=mode;
   $('draw-mode').classList.toggle('active',mode==='draw');
   $('pan-mode').classList.toggle('active',mode==='pan');
@@ -154,6 +161,7 @@ async function openFile(file) {
 async function goPage(page) {if(state.busy || page<1 || page>state.numPages || page===state.page) return;state.page=page; await renderPage(); updateControls();}
 async function renderPage() {
   if(!state.pdf) return;
+  cancelDrawing();
   const ticket=++state.renderTicket;
   $('empty-page').classList.remove('hidden');$('page-shell').classList.add('hidden');
   $('empty-page').textContent='Rendering page...';
@@ -188,6 +196,7 @@ function createMaskElement(box) {
   elem.setAttribute('aria-label',elem.title);
   elem.addEventListener('click',e=>{
     e.stopPropagation();if(state.mode==='pan' || state.busy) return;
+    if($('pencil-only').checked && e.detail!==0 && e.pointerType!=='pen') return;
     mutate(()=>{const masks=currentMasks();const found=masks.find(m=>m.id===box.id);
       if(!found) return;
       if(!found.accepted) found.accepted=true;
@@ -207,26 +216,29 @@ function pointInOverlay(event) {
   return {x:clamp((event.clientX-rect.left)/rect.width,0,1),y:clamp((event.clientY-rect.top)/rect.height,0,1)};
 }
 $('overlay').addEventListener('pointerdown',e=>{
-  if(state.mode!=='draw'||state.busy||e.target!==$('overlay')) return;
-  e.preventDefault(); pointerStart=pointInOverlay(e);
+  if(state.mode!=='draw'||state.busy||activePointerId!==null||!e.isPrimary||e.button!==0||e.target!==$('overlay')) return;
+  if($('pencil-only').checked && e.pointerType!=='pen') return;
+  e.preventDefault(); activePointerId=e.pointerId;pointerStart=pointInOverlay(e);
   $('overlay').setPointerCapture(e.pointerId);
   const preview=document.createElement('div');preview.className='mask preview';preview.id='drawing-preview';$('overlay').append(preview);
 });
 $('overlay').addEventListener('pointermove',e=>{
-  if(!pointerStart) return;
+  if(!pointerStart || e.pointerId!==activePointerId) return;
   const pos=pointInOverlay(e);const box=normalizeBox(pointerStart.x,pointerStart.y,pos.x,pos.y);
   const preview=$('drawing-preview');if(!preview)return;
   Object.assign(preview.style,{left:`${box.x*100}%`,top:`${box.y*100}%`,width:`${box.w*100}%`,height:`${box.h*100}%`});
 });
 function finishDrawing(e) {
-  if(!pointerStart) return;
+  if(!pointerStart || e.pointerId!==activePointerId) return;
   const pos=pointInOverlay(e);const box=normalizeBox(pointerStart.x,pointerStart.y,pos.x,pos.y);
-  pointerStart=null;$('drawing-preview')?.remove();
+  cancelDrawing();
   if(box.w<0.004||box.h<0.004) return;
   mutate(()=>currentMasks().push({...box,id:rectCounter++,accepted:true,label:'Manual'}));
 }
 $('overlay').addEventListener('pointerup',finishDrawing);
-$('overlay').addEventListener('pointercancel',()=>{pointerStart=null;$('drawing-preview')?.remove();});
+$('overlay').addEventListener('pointercancel',e=>{if(e.pointerId===activePointerId) cancelDrawing();});
+$('overlay').addEventListener('lostpointercapture',e=>{if(e.pointerId===activePointerId) cancelDrawing();});
+$('pencil-only').addEventListener('change',cancelDrawing);
 
 async function detect() {
   if(!state.pdf||state.busy)return;

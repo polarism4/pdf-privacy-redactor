@@ -41,6 +41,13 @@ npm run preview
 
 Files inside `dist/` can be hosted on any static HTTPS host. There is no app backend.
 
+## iPad and Apple Pencil controls
+
+- **Draw mask** accepts a finger, mouse, or pen by default. Only one drawing contact is tracked; cancelled gestures are discarded.
+- Enable **Pencil only** to draw or tap masks with a pen while ignoring finger/mouse edits. This uses the browser's `PointerEvent.pointerType`; it is not hardware palm rejection. Keyboard activation remains available.
+- Switch to **Navigate** to scroll the document with a finger. Switch back to Draw mask to edit.
+- Review every page and the downloaded PDF. Real iPad Safari, Pencil hardware, Files downloads, rotation, and memory pressure still require device acceptance testing.
+
 ## Deploy using GitHub Pages from an iPad
 
 1. Create a new GitHub repository (recommended name `pdf-privacy-redactor`), add a `main` branch.

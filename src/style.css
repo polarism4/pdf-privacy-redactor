@@ -5,3 +5,9 @@
 
 .review-btn{font-size:11px;border:1px solid #d5e0ed;border-radius:8px;padding:8px!important;background:#f5f9ff;white-space:nowrap}
 @media(max-width:700px){.page-controls{flex-wrap:wrap;gap:6px}.review-btn{font-size:10px}.page-bottom{align-items:flex-start;flex-wrap:wrap}}
+
+/* Comfortable controls and safe-area spacing for touch devices. */
+.pencil-option{display:flex;align-items:center;gap:6px;font-size:12px;padding:8px;color:var(--ink)}
+.pencil-option input{width:20px;height:20px;accent-color:var(--blue)}
+@media(pointer:coarse){button,.upload-button,.pencil-option{min-height:44px}.iconbtn{min-width:44px}.viewer{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.page-bottom{flex-wrap:wrap}.page-controls{flex-wrap:wrap}.overlay{-webkit-touch-callout:none}}
+@supports(padding:max(0px)){main{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}footer{padding-bottom:max(18px,env(safe-area-inset-bottom))}}
